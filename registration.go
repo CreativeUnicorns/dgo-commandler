@@ -1,3 +1,7 @@
+// File: registration.go
+// Package: commandler
+// Description: This file contains the registration functions for interaction commands.
+
 package commandler
 
 import (

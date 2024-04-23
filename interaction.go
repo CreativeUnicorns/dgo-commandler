@@ -1,4 +1,6 @@
-// commandler/interaction.go
+// interaction.go
+// Package: commandler
+// Description: This file contains the definition of the InteractionCommand struct and related functions.
 
 package commandler
 

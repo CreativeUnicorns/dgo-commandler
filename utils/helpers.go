@@ -1,5 +1,6 @@
 // File: utils/helpers.go
 // Package: utils
+// Description: Add helper functions to interact with Discord API.
 
 package utils
 

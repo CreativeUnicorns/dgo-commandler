@@ -1,4 +1,5 @@
-// File: commandler/middleware.go
+// File: middleware.go
+// Package: commandler
 // Description: Middleware for command handlers.
 package commandler
 
