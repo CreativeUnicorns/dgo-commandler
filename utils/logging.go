@@ -1,7 +1,5 @@
-// File: utils/logging.go
-// Package: utils
-// Description: This file contains the setup for structured logging.
-
+// Package utils provides utility functions and configurations used by the commandler package,
+// particularly for logging and other common tasks.
 package utils
 
 import (
@@ -9,14 +7,14 @@ import (
 	"os"
 )
 
-// setupLogger configures and returns a new slog.Logger with structured logging.
+// SetupLogger configures and returns a new slog.Logger configured for structured logging.
+// The logger outputs key=value pairs in text format to the standard error stream.
 func SetupLogger() *slog.Logger {
-	// Creating a TextHandler to log in key=value text format to standard error.
 	handler := slog.NewTextHandler(os.Stderr, nil)
 
-	// Create a new logger with the configured handler.
 	return slog.New(handler)
 }
 
-// Global Logger for use throughout the commandler package.
+// Logger is a global slog.Logger instance used for logging throughout the commandler package.
+// It is initialized with a handler that outputs logs in a structured text format.
 var Logger = SetupLogger()

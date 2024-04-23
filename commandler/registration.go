@@ -1,7 +1,5 @@
-// File: registration.go
-// Package: commandler
-// Description: This file contains the registration functions for interaction commands.
-
+// Package commandler provides structures and functions to manage the registration and execution
+// of Discord interaction commands.
 package commandler
 
 import (
@@ -9,10 +7,11 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var (
-	defaultDMPermission bool = false
-)
+// defaultDMPermission specifies the default permission for direct messages when registering commands.
+var defaultDMPermission bool = false
 
+// AddInteractionCommandHandlers adds a handler function to a discordgo.Session which will
+// process incoming interaction commands by invoking the appropriate command handler.
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	// Register interaction handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -26,7 +25,8 @@ func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	})
 }
 
-// Register commands with Discord API (RegisterInteractionCommands)
+// RegisterInteractionCommands registers all InteractionCommands with the Discord API.
+// It uses the properties of each InteractionCommand to create corresponding ApplicationCommands.
 func RegisterInteractionCommands(dg *discordgo.Session) {
 	for _, cmd := range GetInteractionCommands() {
 		// Prepare the application command to create
@@ -62,7 +62,8 @@ func RegisterInteractionCommands(dg *discordgo.Session) {
 	}
 }
 
-// Register both handlers and global commands
+// AddAndRegisterInteractionCommands registers both command handlers and global commands on a discordgo.Session.
+// This is typically called during the initialization phase of the bot to set up all interaction commands.
 func AddAndRegisterInteractionCommands(dg *discordgo.Session) {
 	AddInteractionCommandHandlers(dg)
 	RegisterInteractionCommands(dg)

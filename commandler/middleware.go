@@ -1,6 +1,4 @@
-// File: middleware.go
-// Package: commandler
-// Description: Middleware for command handlers.
+// Package commandler provides middleware support for handling Discord interaction commands.
 package commandler
 
 import (
@@ -8,14 +6,14 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CommandHandler is the type for functions that handle Discord interaction commands.
+// CommandHandler defines a function type that processes a Discord interaction event.
 type CommandHandler func(s *discordgo.Session, i *discordgo.InteractionCreate)
 
-// Middleware is the type for middleware functions.
+// Middleware defines a function type for middleware, which modifies or extends the behavior of a CommandHandler.
 type Middleware func(CommandHandler) CommandHandler
 
-// ApplyDefaultMiddleware sets up the default middleware chain for command handlers,
-// with the option to include additional middleware.
+// ApplyDefaultMiddleware sets up a default middleware chain for a given CommandHandler.
+// Additional middlewares can be appended to the chain.
 func ApplyDefaultMiddleware(handler CommandHandler, additionalMiddlewares ...Middleware) CommandHandler {
 	// Start with a default set of middleware (here, just LoggerMiddleware)
 	middlewares := []Middleware{LoggerMiddleware}
@@ -27,7 +25,7 @@ func ApplyDefaultMiddleware(handler CommandHandler, additionalMiddlewares ...Mid
 	return ChainMiddlewares(handler, middlewares...)
 }
 
-// LoggerMiddleware logs information about the command execution before passing execution to the actual handler.
+// LoggerMiddleware logs information about the execution of Discord commands before the command handler is invoked.
 func LoggerMiddleware(next CommandHandler) CommandHandler {
 	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		logCommandExecution(s, i)
@@ -35,16 +33,15 @@ func LoggerMiddleware(next CommandHandler) CommandHandler {
 	}
 }
 
-// logCommandExecution handles the creation of log entries for command executions.
+// logCommandExecution logs detailed information about a command execution, such as command name,
+// user ID, user name, and other relevant details.
 func logCommandExecution(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// Structured logging of command execution details.
 	commandName := i.ApplicationCommandData().Name
 	user := i.Member.User
 	userID := user.ID
 	userName := user.Username
 	userNick := i.Member.Nick
 
-	// Check if it's in a guild or a DM.
 	if i.GuildID == "" {
 		utils.Logger.Info("Executing command in DMs", "command", commandName, "userID", userID, "userName", userName, "userNick", userNick)
 	} else {
@@ -60,7 +57,8 @@ func logCommandExecution(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 }
 
-// ChainMiddlewares creates a new CommandHandler by chaining multiple middlewares.
+// ChainMiddlewares returns a new CommandHandler that is the result of chaining multiple Middleware functions.
+// Each Middleware wraps the CommandHandler passed to it, potentially modifying its execution or adding new behaviors.
 func ChainMiddlewares(handler CommandHandler, middlewares ...Middleware) CommandHandler {
 	for _, middleware := range middlewares {
 		handler = middleware(handler)
