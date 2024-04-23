@@ -21,9 +21,9 @@ var interactionCommands = make([]*InteractionCommand, 0)
 
 // RegisterInteractionCommand registers a new slash command
 // Modify the RegisterInteractionCommand function to apply middleware
-func RegisterInteractionCommand(cmd *InteractionCommand) {
-	// Wrap the handler with middleware before registration
-	wrappedHandler := LoggerMiddleware(cmd.Handler)
+func RegisterInteractionCommand(cmd *InteractionCommand, additionalMiddlewares ...Middleware) {
+	// Apply default middleware, potentially including additional specified middleware
+	wrappedHandler := ApplyDefaultMiddleware(cmd.Handler, additionalMiddlewares...)
 	cmd.Handler = wrappedHandler
 
 	interactionCommands = append(interactionCommands, cmd)
