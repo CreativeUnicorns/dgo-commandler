@@ -57,21 +57,19 @@ func ComesFromDM(s *discordgo.Session, m *discordgo.MessageCreate) (bool, error)
 	return channel.Type == discordgo.ChannelTypeDM, nil
 }
 
-// channel id to channel name from cache
-func GetChannelName(s *discordgo.Session, channelID string) (string, error) {
-	channel, err := s.State.Channel(channelID)
+// GetChannelName retrieves the name of a channel by its ID.
+func GetChannelName(session *discordgo.Session, channelID string) (string, error) {
+	channel, err := session.State.Channel(channelID)
 	if err != nil {
-		log.Printf("Failed to get channel details: %v", err)
 		return "", err
 	}
 	return channel.Name, nil
 }
 
-// guild id to guild name from cache
-func GetGuildName(s *discordgo.Session, guildID string) (string, error) {
-	guild, err := s.State.Guild(guildID)
+// GetGuildName retrieves the name of a guild by its ID.
+func GetGuildName(session *discordgo.Session, guildID string) (string, error) {
+	guild, err := session.State.Guild(guildID)
 	if err != nil {
-		log.Printf("Failed to get guild details: %v", err)
 		return "", err
 	}
 	return guild.Name, nil
