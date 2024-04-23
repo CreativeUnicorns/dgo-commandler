@@ -5,9 +5,7 @@
 package commandler
 
 import (
-	"fmt"
-	"log"
-
+	"github.com/CreativeUnicorns/dgo-commandler/utils"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -18,9 +16,8 @@ var (
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	// Register interaction handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-
 		for _, cmd := range GetInteractionCommands() {
-			fmt.Printf("Registering handler for command: %v\n", cmd.Name)
+			utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
 			if i.ApplicationCommandData().Name == cmd.Name {
 				cmd.Handler(s, i)
 				break
@@ -58,10 +55,10 @@ func RegisterInteractionCommands(dg *discordgo.Session) {
 		// Create the command globally
 		_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", appCmd)
 		if err != nil {
-			log.Printf("Cannot create '%v' command: %v\n", cmd.Name, err)
+			utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
 			continue
 		}
-		fmt.Printf("Successfully registered global command: %v\n", cmd.Name)
+		utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
 	}
 }
 

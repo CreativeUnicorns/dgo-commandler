@@ -4,8 +4,6 @@
 package commandler
 
 import (
-	"log"
-
 	"github.com/CreativeUnicorns/dgo-commandler/utils"
 	"github.com/bwmarrin/discordgo"
 )
@@ -39,21 +37,25 @@ func LoggerMiddleware(next CommandHandler) CommandHandler {
 
 // logCommandExecution handles the creation of log entries for command executions.
 func logCommandExecution(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	// Structured logging of command execution details.
 	commandName := i.ApplicationCommandData().Name
 	user := i.Member.User
 	userID := user.ID
 	userName := user.Username
 	userNick := i.Member.Nick
 
+	// Check if it's in a guild or a DM.
 	if i.GuildID == "" {
-		log.Printf("[middleware] Executing command: /%s by %s in DMs (userID='%s', userName='%s', userNick='%s')", commandName, userName, userID, userName, userNick)
+		utils.Logger.Info("Executing command in DMs", "command", commandName, "userID", userID, "userName", userName, "userNick", userNick)
 	} else {
 		channelName, errChannel := utils.GetChannelName(s, i.ChannelID)
 		guildName, errGuild := utils.GetGuildName(s, i.GuildID)
 		if errChannel != nil || errGuild != nil {
-			log.Printf("[middleware] Error retrieving channel or guild name: %v %v", errChannel, errGuild)
+			utils.Logger.Error("Error retrieving channel or guild name", "channelError", errChannel, "guildError", errGuild)
 		} else {
-			log.Printf("[middleware] Executing command: /%s by %s in guild %s (%s) in %s (%s) (userID='%s', userName='%s', userNick='%s')", commandName, userName, guildName, i.GuildID, channelName, i.ChannelID, userID, userName, userNick)
+			utils.Logger.Info("Executing command in guild",
+				"command", commandName, "userName", userName, "guildName", guildName, "channelName", channelName,
+				"userID", userID, "guildID", i.GuildID, "channelID", i.ChannelID, "userNick", userNick)
 		}
 	}
 }

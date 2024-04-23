@@ -6,7 +6,6 @@ package utils
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -16,6 +15,7 @@ func IsUserBot(session *discordgo.Session, userID string) (bool, error) {
 	// Retrieve the user information
 	user, err := session.User(userID)
 	if err != nil {
+		Logger.Error("Error retrieving user", "userID", userID, "error", err)
 		return false, fmt.Errorf("error retrieving user: %w", err)
 	}
 
@@ -27,19 +27,22 @@ func SendDirectMessage(session *discordgo.Session, userID string, message string
 	// Check if the user is a bot
 	isBot, err := IsUserBot(session, userID)
 	if err != nil {
-		log.Printf("Error checking if user is a bot: %s\n", err)
-	} else {
-		log.Printf("Is the user a bot? %t\n", isBot)
+		Logger.Error("Error checking if user is a bot", "userID", userID, "error", err)
+		return err
 	}
+	Logger.Info("Checked bot status", "userID", userID, "isBot", isBot)
+
 	// Create a DM channel with this user
 	channel, err := session.UserChannelCreate(userID)
 	if err != nil {
+		Logger.Error("Error creating DM channel", "userID", userID, "error", err)
 		return fmt.Errorf("error creating DM channel: %w", err)
 	}
 
 	// Send a message to this channel
 	_, err = session.ChannelMessageSend(channel.ID, message)
 	if err != nil {
+		Logger.Error("Error sending message", "channelID", channel.ID, "message", message, "error", err)
 		return fmt.Errorf("error sending message: %w", err)
 	}
 
@@ -51,6 +54,7 @@ func ComesFromDM(s *discordgo.Session, m *discordgo.MessageCreate) (bool, error)
 	channel, err := s.State.Channel(m.ChannelID)
 	if err != nil {
 		if channel, err = s.Channel(m.ChannelID); err != nil {
+			Logger.Error("Failed to get channel details", "channelID", m.ChannelID, "error", err)
 			return false, err
 		}
 	}
@@ -62,7 +66,7 @@ func ComesFromDM(s *discordgo.Session, m *discordgo.MessageCreate) (bool, error)
 func GetChannelName(s *discordgo.Session, channelID string) (string, error) {
 	channel, err := s.State.Channel(channelID)
 	if err != nil {
-		log.Printf("Failed to get channel details: %v", err)
+		Logger.Error("Failed to get channel details", "channelID", channelID, "error", err)
 		return "", err
 	}
 	return channel.Name, nil
@@ -72,7 +76,7 @@ func GetChannelName(s *discordgo.Session, channelID string) (string, error) {
 func GetGuildName(s *discordgo.Session, guildID string) (string, error) {
 	guild, err := s.State.Guild(guildID)
 	if err != nil {
-		log.Printf("Failed to get guild details: %v", err)
+		Logger.Error("Failed to get guild details", "guildID", guildID, "error", err)
 		return "", err
 	}
 	return guild.Name, nil
