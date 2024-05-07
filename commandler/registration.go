@@ -1,22 +1,22 @@
+// Package commandler provides structures and functions to manage the registration and execution
+// of Discord interaction commands.
 package commandler
 
 import (
-	"fmt"
-	"log"
-
+	"github.com/CreativeUnicorns/dgo-commandler/utils"
 	"github.com/bwmarrin/discordgo"
 )
 
-var (
-	defaultDMPermission bool = false
-)
+// defaultDMPermission specifies the default permission for direct messages when registering commands.
+var defaultDMPermission bool = false
 
+// AddInteractionCommandHandlers adds a handler function to a discordgo.Session which will
+// process incoming interaction commands by invoking the appropriate command handler.
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	// Register interaction handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-
 		for _, cmd := range GetInteractionCommands() {
-			fmt.Printf("Registering handler for command: %v\n", cmd.Name)
+			utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
 			if i.ApplicationCommandData().Name == cmd.Name {
 				cmd.Handler(s, i)
 				break
@@ -25,7 +25,8 @@ func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	})
 }
 
-// Register commands with Discord API (RegisterInteractionCommands)
+// RegisterInteractionCommands registers all InteractionCommands with the Discord API.
+// It uses the properties of each InteractionCommand to create corresponding ApplicationCommands.
 func RegisterInteractionCommands(dg *discordgo.Session) {
 	for _, cmd := range GetInteractionCommands() {
 		// Prepare the application command to create
@@ -54,14 +55,15 @@ func RegisterInteractionCommands(dg *discordgo.Session) {
 		// Create the command globally
 		_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", appCmd)
 		if err != nil {
-			log.Printf("Cannot create '%v' command: %v\n", cmd.Name, err)
+			utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
 			continue
 		}
-		fmt.Printf("Successfully registered global command: %v\n", cmd.Name)
+		utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
 	}
 }
 
-// Register both handlers and global commands
+// AddAndRegisterInteractionCommands registers both command handlers and global commands on a discordgo.Session.
+// This is typically called during the initialization phase of the bot to set up all interaction commands.
 func AddAndRegisterInteractionCommands(dg *discordgo.Session) {
 	AddInteractionCommandHandlers(dg)
 	RegisterInteractionCommands(dg)
