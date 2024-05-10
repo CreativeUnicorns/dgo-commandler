@@ -15,11 +15,14 @@ var defaultDMPermission bool = false
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	// Register interaction handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		for _, cmd := range GetInteractionCommands() {
-			utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
-			if i.ApplicationCommandData().Name == cmd.Name {
-				cmd.Handler(s, i)
-				break
+		// Ensure the interaction is a command before processing
+		if i.Type == discordgo.InteractionApplicationCommand {
+			for _, cmd := range GetInteractionCommands() {
+				utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
+				if i.ApplicationCommandData().Name == cmd.Name {
+					cmd.Handler(s, i)
+					break
+				}
 			}
 		}
 	})
