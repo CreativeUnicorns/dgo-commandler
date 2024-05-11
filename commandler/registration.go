@@ -3,6 +3,8 @@
 package commandler
 
 import (
+	"sync"
+
 	"github.com/CreativeUnicorns/dgo-commandler/utils"
 	"github.com/bwmarrin/discordgo"
 )
@@ -15,51 +17,57 @@ var defaultDMPermission bool = false
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	// Register interaction handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		for _, cmd := range GetInteractionCommands() {
-			utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
-			if i.ApplicationCommandData().Name == cmd.Name {
-				cmd.Handler(s, i)
-				break
+		// Ensure the interaction is a command before processing
+		if i.Type == discordgo.InteractionApplicationCommand {
+			for _, cmd := range GetInteractionCommands() {
+				utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
+				if i.ApplicationCommandData().Name == cmd.Name {
+					cmd.Handler(s, i)
+					break
+				}
 			}
 		}
 	})
 }
 
-// RegisterInteractionCommands registers all InteractionCommands with the Discord API.
+// RegisterInteractionCommands registers all InteractionCommands with the Discord API concurrently.
 // It uses the properties of each InteractionCommand to create corresponding ApplicationCommands.
 func RegisterInteractionCommands(dg *discordgo.Session) {
-	for _, cmd := range GetInteractionCommands() {
-		// Prepare the application command to create
-		appCmd := &discordgo.ApplicationCommand{
-			Name:         cmd.Name,
-			Description:  cmd.Description,
-			DMPermission: &defaultDMPermission,
-			Options:      cmd.Options,
-		}
+	commands := GetInteractionCommands()
+	var wg sync.WaitGroup
+	wg.Add(len(commands))
 
-		// Only add DefaultMemberPermissions if set (non-zero)
-		if cmd.DefaultMemberPermissions != 0 {
-			appCmd.DefaultMemberPermissions = &cmd.DefaultMemberPermissions
-		}
+	for _, cmd := range commands {
+		go func(cmd InteractionCommand) {
+			defer wg.Done()
+			appCmd := &discordgo.ApplicationCommand{
+				Name:         cmd.Name,
+				Description:  cmd.Description,
+				DMPermission: &defaultDMPermission,
+				Options:      cmd.Options,
+			}
 
-		// Only add DMPermission if it differs from the default
-		if cmd.DMPermission {
-			appCmd.DMPermission = &cmd.DMPermission
-		}
+			if cmd.DefaultMemberPermissions != 0 {
+				appCmd.DefaultMemberPermissions = &cmd.DefaultMemberPermissions
+			}
 
-		// Only add NSFW if true since default is false
-		if cmd.NSFW {
-			appCmd.NSFW = &cmd.NSFW
-		}
+			if cmd.DMPermission {
+				appCmd.DMPermission = &cmd.DMPermission
+			}
 
-		// Create the command globally
-		_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", appCmd)
-		if err != nil {
-			utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
-			continue
-		}
-		utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
+			if cmd.NSFW {
+				appCmd.NSFW = &cmd.NSFW
+			}
+
+			_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", appCmd)
+			if err != nil {
+				utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
+				return
+			}
+			utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
+		}(*cmd)
 	}
+	wg.Wait() // Wait for all goroutines to finish
 }
 
 // AddAndRegisterInteractionCommands registers both command handlers and global commands on a discordgo.Session.
