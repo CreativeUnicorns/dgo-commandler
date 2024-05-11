@@ -12,19 +12,17 @@ import (
 // defaultDMPermission specifies the default permission for direct messages when registering commands.
 var defaultDMPermission bool = false
 
+// commandMap maps command names to their handlers for quick lookup.
+var commandMap = make(map[string]*InteractionCommand)
+
 // AddInteractionCommandHandlers adds a handler function to a discordgo.Session which will
 // process incoming interaction commands by invoking the appropriate command handler.
+
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
-	// Register interaction handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		// Ensure the interaction is a command before processing
 		if i.Type == discordgo.InteractionApplicationCommand {
-			for _, cmd := range GetInteractionCommands() {
-				utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
-				if i.ApplicationCommandData().Name == cmd.Name {
-					cmd.Handler(s, i)
-					break
-				}
+			if cmd, exists := commandMap[i.ApplicationCommandData().Name]; exists {
+				cmd.Handler(s, i)
 			}
 		}
 	})
@@ -34,40 +32,45 @@ func AddInteractionCommandHandlers(dg *discordgo.Session) {
 // It uses the properties of each InteractionCommand to create corresponding ApplicationCommands.
 func RegisterInteractionCommands(dg *discordgo.Session) {
 	commands := GetInteractionCommands()
+	batchSize := 10 // Adjust based on empirical testing for optimal performance.
+	batches := (len(commands) + batchSize - 1) / batchSize
+
 	var wg sync.WaitGroup
-	wg.Add(len(commands))
+	wg.Add(batches)
 
-	for _, cmd := range commands {
-		go func(cmd InteractionCommand) {
+	for i := 0; i < len(commands); i += batchSize {
+		go func(batch []*InteractionCommand) {
 			defer wg.Done()
-			appCmd := &discordgo.ApplicationCommand{
-				Name:         cmd.Name,
-				Description:  cmd.Description,
-				DMPermission: &defaultDMPermission,
-				Options:      cmd.Options,
+			for _, cmd := range batch {
+				appCmd := &discordgo.ApplicationCommand{
+					Name:         cmd.Name,
+					Description:  cmd.Description,
+					DMPermission: &cmd.DMPermission,
+					Options:      cmd.Options,
+				}
+				if cmd.DefaultMemberPermissions != 0 {
+					appCmd.DefaultMemberPermissions = &cmd.DefaultMemberPermissions
+				}
+				if cmd.NSFW {
+					appCmd.NSFW = &cmd.NSFW
+				}
+				_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", appCmd)
+				if err != nil {
+					utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
+				} else {
+					utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
+				}
 			}
-
-			if cmd.DefaultMemberPermissions != 0 {
-				appCmd.DefaultMemberPermissions = &cmd.DefaultMemberPermissions
-			}
-
-			if cmd.DMPermission {
-				appCmd.DMPermission = &cmd.DMPermission
-			}
-
-			if cmd.NSFW {
-				appCmd.NSFW = &cmd.NSFW
-			}
-
-			_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", appCmd)
-			if err != nil {
-				utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
-				return
-			}
-			utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
-		}(*cmd)
+		}(commands[i:min(i+batchSize, len(commands))])
 	}
 	wg.Wait() // Wait for all goroutines to finish
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // AddAndRegisterInteractionCommands registers both command handlers and global commands on a discordgo.Session.

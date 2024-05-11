@@ -27,6 +27,7 @@ func RegisterInteractionCommand(cmd *InteractionCommand, additionalMiddlewares .
 	cmd.Handler = wrappedHandler
 
 	interactionCommands = append(interactionCommands, cmd)
+	commandMap[cmd.Name] = cmd
 }
 
 // GetInteractionCommands returns a slice containing all registered InteractionCommands.
