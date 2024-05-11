@@ -45,11 +45,14 @@ func RegisterInteractionCommands(dg *discordgo.Session) {
 				appCmd := &discordgo.ApplicationCommand{
 					Name:         cmd.Name,
 					Description:  cmd.Description,
-					DMPermission: &cmd.DMPermission,
+					DMPermission: &defaultDMPermission,
 					Options:      cmd.Options,
 				}
 				if cmd.DefaultMemberPermissions != 0 {
 					appCmd.DefaultMemberPermissions = &cmd.DefaultMemberPermissions
+				}
+				if cmd.DMPermission {
+					appCmd.DMPermission = &cmd.DMPermission
 				}
 				if cmd.NSFW {
 					appCmd.NSFW = &cmd.NSFW
