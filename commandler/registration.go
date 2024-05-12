@@ -14,15 +14,16 @@ var defaultDMPermission bool = false
 // process incoming interaction commands by invoking the appropriate command handler.
 func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	// Register interaction handler
-	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		for _, cmd := range GetInteractionCommands() {
-			utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
-			if i.ApplicationCommandData().Name == cmd.Name {
-				cmd.Handler(s, i)
-				break
+	for _, cmd := range GetInteractionCommands() {
+		utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
+		dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Type == discordgo.InteractionApplicationCommand {
+				if i.ApplicationCommandData().Name == cmd.Name {
+					cmd.Handler(s, i)
+				}
 			}
-		}
-	})
+		})
+	}
 }
 
 // RegisterInteractionCommands registers all InteractionCommands with the Discord API.
