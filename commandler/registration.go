@@ -22,7 +22,9 @@ func AddInteractionCommandHandlers(dg *discordgo.Session) {
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if i.Type == discordgo.InteractionApplicationCommand {
 			if cmd, exists := commandMap[i.ApplicationCommandData().Name]; exists {
+				utils.Logger.Info("Registering handler for command", "commandName", cmd.Name)
 				cmd.Handler(s, i)
+				utils.Logger.Info("Command executed", "command", i.ApplicationCommandData().Name)
 			}
 		}
 	})
