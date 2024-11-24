@@ -79,3 +79,32 @@ func RegisterSingleCommand(s *discordgo.Session, cmd *discordgo.ApplicationComma
 	}
 	log.Printf("Command %v has been registered.", cmd.Name)
 }
+
+// RegisterSingleCommandFromInteraction accepts an InteractionCommand and registers it with Discord.
+func RegisterSingleCommandFromInteraction(s *discordgo.Session, cmd *InteractionCommand) {
+	// Prepare the application command to create
+	appCmd := &discordgo.ApplicationCommand{
+		Name:         cmd.Name,
+		Description:  cmd.Description,
+		DMPermission: &cmd.DMPermission,
+		Options:      cmd.Options,
+	}
+
+	// Only add DefaultMemberPermissions if set (non-zero)
+	if cmd.DefaultMemberPermissions != 0 {
+		appCmd.DefaultMemberPermissions = &cmd.DefaultMemberPermissions
+	}
+
+	// Only add NSFW if true since default is false
+	if cmd.NSFW {
+		appCmd.NSFW = &cmd.NSFW
+	}
+
+	// Create the command globally
+	_, err := s.ApplicationCommandCreate(s.State.User.ID, "", appCmd)
+	if err != nil {
+		utils.Logger.Error("Cannot create command", "commandName", cmd.Name, "error", err)
+		return
+	}
+	utils.Logger.Info("Successfully registered global command", "commandName", cmd.Name)
+}
