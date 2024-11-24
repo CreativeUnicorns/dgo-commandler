@@ -3,6 +3,8 @@
 package commandler
 
 import (
+	"log"
+
 	"github.com/CreativeUnicorns/dgo-commandler/utils"
 	"github.com/bwmarrin/discordgo"
 )
@@ -67,4 +69,13 @@ func RegisterInteractionCommands(dg *discordgo.Session) {
 func AddAndRegisterInteractionCommands(dg *discordgo.Session) {
 	AddInteractionCommandHandlers(dg)
 	RegisterInteractionCommands(dg)
+}
+
+// RegisterSingleCommand registers a single application command with Discord.
+func RegisterSingleCommand(s *discordgo.Session, cmd *discordgo.ApplicationCommand) {
+	_, err := s.ApplicationCommandCreate(s.State.User.ID, "", cmd)
+	if err != nil {
+		log.Fatalf("Cannot create command %v: %v", cmd.Name, err)
+	}
+	log.Printf("Command %v has been registered.", cmd.Name)
 }
